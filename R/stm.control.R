@@ -66,7 +66,6 @@ stm.control <- function(documents, vocab, settings, model=NULL) {
   
   if (settings$cores > 1) {
     cl <- parallel::makeCluster(settings$cores)
-    parallel::makeCluster(cl)
     doParallel::registerDoParallel(cl)
   }
   
