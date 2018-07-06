@@ -103,13 +103,11 @@ estepmc <- function(documents, beta.index, update.mu, #null allows for intercept
   
   sysname <- Sys.info()["sysname"]
   if (sysname == "Windows") {
-    cl <- parallel::makeCluster(cores)
     out <- parallel::clusterApply(cl, groups, fun=estep_parallel_block,
                                   documents=documents, beta.index=beta.index,
                                   lambda.old=lambda.old, mu=mu, beta=beta, siginv=siginv,
                                   sigmaentropy=sigmaentropy, update.mu=update.mu,
                                   K=K, N=N, V=V, A=A)
-    parallel::stopCluster(cl)
   } else {
     out <- parallel::mclapply(groups, FUN=estep_parallel_block, mc.cores=cores,
                               documents=documents, beta.index=beta.index,
