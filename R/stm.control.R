@@ -65,8 +65,7 @@ stm.control <- function(documents, vocab, settings, model=NULL) {
   ############
   
   if (settings$cores > 1) {
-    cl <- parallel::makeCluster(settings$cores)
-    doParallel::registerDoParallel(cl)
+    parallel::setDefaultCluster(parallel::makeCluster(settings$cores))
   }
   
   while(!stopits) {
@@ -186,9 +185,7 @@ stm.control <- function(documents, vocab, settings, model=NULL) {
                                        settings$topicreportevery, verbose)
   }
 
-  if (settings$cores > 1) {
-    parallel::stopCluster(cl)
-  }
+  parallel::setDefaultCluster(NULL)
   
   #######
   #Step 3: Construct Output

@@ -103,7 +103,7 @@ estepmc <- function(documents, beta.index, update.mu, #null allows for intercept
   
   sysname <- Sys.info()["sysname"]
   if (sysname == "Windows") {
-    out <- parallel::clusterApply(cl, groups, fun=estep_parallel_block,
+    out <- parallel::clusterApply(NULL, groups, fun=estep_parallel_block,
                                   documents=documents, beta.index=beta.index,
                                   lambda.old=lambda.old, mu=mu, beta=beta, siginv=siginv,
                                   sigmaentropy=sigmaentropy, update.mu=update.mu,
