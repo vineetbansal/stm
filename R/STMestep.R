@@ -3,15 +3,15 @@
 #####################################
 estepSerial <- function(N, K, A, V, documents, beta.index, lambda.old, mu, update.mu, beta, sigmaentropy, siginv, verbose) {
   
-  sigma.ss <- diag(0, nrow=(K-1))
+  # sigma.ss <- diag(0, nrow=(K-1))
   sigma.ss.parts <- list()
-  beta.ss <- vector(mode="list", length=A)
+  # beta.ss <- vector(mode="list", length=A)
   
   beta.ss.parts <- array(0, dim=c(N, A, K, V))
   
-  for(i in 1:A) {
-    beta.ss[[i]] <- matrix(0, nrow=K,ncol=V)
-  }
+  # for(i in 1:A) {
+  #  beta.ss[[i]] <- matrix(0, nrow=K,ncol=V)
+  # }
   bound <- vector(length=N)
   lambda <- vector("list", length=N)
   ctevery <- ifelse(N>100, floor(N/100), 1)
@@ -34,7 +34,7 @@ estepSerial <- function(N, K, A, V, documents, beta.index, lambda.old, mu, updat
     # update sufficient statistics
     # sigma.ss <- sigma.ss + doc.results$eta$nu
     sigma.ss.parts[[i]] <- doc.results$eta$nu
-    beta.ss[[aspect]][,words] <- doc.results$phis + beta.ss[[aspect]][,words]
+    # beta.ss[[aspect]][,words] <- doc.results$phis + beta.ss[[aspect]][,words]
     beta.ss.parts[i, aspect, , words] <- doc.results$phis
     bound[i] <- doc.results$bound
     lambda[[i]] <- c(doc.results$eta$lambda)
@@ -58,18 +58,15 @@ estepSerial <- function(N, K, A, V, documents, beta.index, lambda.old, mu, updat
 # PARALLEL
 #####################################
 combineFn <- function(R, r) {
-  for (i in 1:length(r$sigma.ss.parts)) {
-    R$sigma.ss.parts[[length(R$sigma.ss.parts)+1]] <- r$sigma.ss.parts[[i]]
-  }
-  
-  n.docs <- dim(r$beta.ss.parts)[1]
-  R$beta.ss.parts[(R$nexti):(R$nexti+n.docs-1),,,] <- r$beta.ss.parts[,,,]
-  R$nexti <- R$nexti + n.docs
+  doc.ids <- unlist(r$doc.ids, use.names=F)
+  R$sigma.ss.parts[doc.ids,,] <- r$sigma.ss.parts[,,]
+  R$beta.ss.parts[doc.ids,,,] <- r$beta.ss.parts[,,,]
   
   # R$sigma.ss <- R$sigma.ss + r$sigma.ss
-  for (i in length(R$beta.ss)) {
-    R$beta.ss[[i]] =  R$beta.ss[[i]] + r$beta.ss[[i]]
-  }
+  # for (i in length(R$beta.ss)) {
+  #   R$beta.ss[[i]] =  R$beta.ss[[i]] + r$beta.ss[[i]]
+  # }
+  
   R$bound[r$doc.ids] <- r$bound[r$doc.ids]
   R$lambda[r$doc.ids] <- r$lambda[r$doc.ids]
   R
@@ -78,14 +75,14 @@ combineFn <- function(R, r) {
 estepParallel <- function(N, K, A, V, documents, beta.index, lambda.old, mu, update.mu, beta, sigmaentropy, siginv, verbose, cores=1) {
   
   # INITIALIZATION OF COMBINED RESULTS
-  beta.ss <- vector(mode="list", length=A)
-  for (i in 1:A) beta.ss[[i]] <- matrix(0, nrow=K, ncol=V)
+  # beta.ss <- vector(mode="list", length=A)
+  # for (i in 1:A) beta.ss[[i]] <- matrix(0, nrow=K, ncol=V)
   initt <- list(
     nexti = 1,
-    sigma.ss.parts = list(),
-    sigma.ss = diag(0, nrow=(K-1)),
+    sigma.ss.parts = array(0, dim=c(N, K-1, K-1)),
+    # sigma.ss = diag(0, nrow=(K-1)),
     beta.ss.parts = array(0, dim=c(N, A, K, V)),
-    beta.ss = beta.ss,
+    # beta.ss = beta.ss,
     bound = vector(length=N),
     lambda = vector("list", length=N)
   )
@@ -99,7 +96,7 @@ estepParallel <- function(N, K, A, V, documents, beta.index, lambda.old, mu, upd
     estepParallelBlock(doc.ids, N, K, A, V, documents[doc.ids], beta.index, lambda.old, mu, update.mu, beta, sigmaentropy, siginv)
   }
   
-  sigma.ss2 <- apply(simplify2array(res$sigma.ss.parts), c(1,2), sum)
+  sigma.ss2 <- apply(res$sigma.ss.parts, c(2,3), sum)
   
   # Sum over all documents, getting a 3d array, A x K x V
   beta.ss2 <- apply(res$beta.ss.parts, c(2,3,4), sum)
@@ -112,13 +109,13 @@ estepParallel <- function(N, K, A, V, documents, beta.index, lambda.old, mu, upd
 
 estepParallelBlock <- function(doc.ids, N, K, A, V, documents, beta.index, lambda.old, mu, update.mu, beta, sigmaentropy, siginv) {
   
-  sigma.ss.parts <- list()
-  sigma.ss <- diag(0, nrow=K-1)
+  sigma.ss.parts <- array(0, dim=c(length(doc.ids), K-1, K-1))
+  # sigma.ss <- diag(0, nrow=K-1)
   beta.ss.parts <- array(0, dim=c(length(doc.ids), A, K, V))
-  beta.ss <- vector(mode='list', length=A)
-  for(i in 1:A) {
-    beta.ss[[i]] <- matrix(0, nrow=K, ncol=V)
-  }
+  # beta.ss <- vector(mode='list', length=A)
+  # for(i in 1:A) {
+  #   beta.ss[[i]] <- matrix(0, nrow=K, ncol=V)
+  # }
   bound <- vector(length=N)
   lambda <- vector("list", length=N)
   
@@ -135,9 +132,9 @@ estepParallelBlock <- function(doc.ids, N, K, A, V, documents, beta.index, lambd
     
     doc.results <- logisticnormalcpp(eta=init, mu=mu.i, siginv=siginv, beta=beta.i, doc=doc, sigmaentropy=sigmaentropy)
     
-    sigma.ss.parts[[length(sigma.ss.parts)+1]] <- doc.results$eta$nu
-    sigma.ss <- sigma.ss + doc.results$eta$nu
-    beta.ss[[aspect]][,words] <- doc.results$phis + beta.ss[[aspect]][,words]
+    sigma.ss.parts[cnt,,] <- doc.results$eta$nu
+    # sigma.ss <- sigma.ss + doc.results$eta$nu
+    # beta.ss[[aspect]][,words] <- doc.results$phis + beta.ss[[aspect]][,words]
     beta.ss.parts[cnt, aspect, , words] <- doc.results$phis
     bound[i] <- doc.results$bound
     lambda[[i]] <- c(doc.results$eta$lambda)
@@ -145,7 +142,7 @@ estepParallelBlock <- function(doc.ids, N, K, A, V, documents, beta.index, lambd
     cnt <- cnt + 1
   }
   
-  list(doc.ids=doc.ids, sigma.ss.parts=sigma.ss.parts, sigma.ss=sigma.ss, beta.ss=beta.ss, beta.ss.parts=beta.ss.parts, bound=bound, lambda=lambda)
+  list(doc.ids=doc.ids, sigma.ss.parts=sigma.ss.parts, beta.ss.parts=beta.ss.parts, bound=bound, lambda=lambda)
 }
 
 #####################################
@@ -167,17 +164,10 @@ estep <- function(documents, beta.index, update.mu, beta, lambda.old, mu, sigma,
     siginv <- chol2inv(sigobj)
   }
   
-  results.parallel <- estepParallel(N, K, A, V, documents, beta.index, lambda.old, mu, update.mu, beta, sigmaentropy, siginv, verbose, cores)
-  results.serial <- estepSerial(N, K, A, V, documents, beta.index, lambda.old, mu, update.mu, beta, sigmaentropy, siginv, verbose)
-  
-  if (!isTRUE(all.equal(results.parallel, results.serial, tol=.Machine$double.xmin))) {
-    stop('DISCREPANCY!!')
-  }
-  
   if (cores>1) {
-    results.parallel
+    estepParallel(N, K, A, V, documents, beta.index, lambda.old, mu, update.mu, beta, sigmaentropy, siginv, verbose, cores)
   } else {
-    results.serial
+    estepSerial(N, K, A, V, documents, beta.index, lambda.old, mu, update.mu, beta, sigmaentropy, siginv, verbose)
   }
   
 }
