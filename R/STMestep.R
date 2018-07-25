@@ -33,10 +33,12 @@ estepSerial <- function(N, K, A, V, documents, beta.index, lambda.old, mu, updat
     bound[i] <- doc.results$bound
     lambda[[i]] <- c(doc.results$eta$lambda)
     if(verbose && i%%ctevery==0) cat(".")
+    if (i%%100==0) write(pryr::mem_used(), paste("mem-",K,"-1.txt",sep=''), append=T)
   }
   if(verbose) cat("\n")
   
   lambda <- do.call(rbind, lambda)
+  write(pryr::mem_used(), paste("mem-",K,"-1.txt",sep=''), append=T)
   list(sigma=sigma.ss, beta=beta.ss, bound=bound, lambda=lambda)
 }
 #####################################
@@ -45,6 +47,7 @@ estepSerial <- function(N, K, A, V, documents, beta.index, lambda.old, mu, updat
 # PARALLEL
 #####################################
 combineFn <- function(R, r) {
+  write(pryr::mem_used(), paste("mem-",R$K,"-",R$cores,".txt",sep=''), append=T)
   R$sigma.ss <- R$sigma.ss + r$sigma.ss
   for (i in length(R$beta.ss)) {
     R$beta.ss[[i]] =  R$beta.ss[[i]] + r$beta.ss[[i]]
@@ -63,7 +66,9 @@ estepParallel <- function(N, K, A, V, documents, beta.index, lambda.old, mu, upd
     sigma.ss = diag(0, nrow=(K-1)),
     beta.ss = beta.ss,
     bound = vector(length=N),
-    lambda = vector("list", length=N)
+    lambda = vector("list", length=N),
+    K=K,
+    cores=cores
   )
   
   if (verbose) cat("Starting Parallel E-Step\n")
@@ -72,14 +77,16 @@ estepParallel <- function(N, K, A, V, documents, beta.index, lambda.old, mu, upd
   doc.id.groups <- base::split(seq_len(N), rep(seq_len(cores), length=N))
   
   res <- foreach (doc.ids = doc.id.groups, .combine = combineFn, .multicombine = FALSE, .init = initt) %dopar% {
-    estepParallelBlock(doc.ids, N, K, A, V, documents[doc.ids], beta.index, lambda.old, mu, update.mu, beta, sigmaentropy, siginv)
+    estepParallelBlock(doc.ids, N, K, A, V, documents[doc.ids], beta.index, lambda.old, mu, update.mu, beta, sigmaentropy, siginv, cores)
   }
   
   lambda <- do.call(rbind, res$lambda)
+  write(pryr::mem_used(), paste("mem-",K,"-",cores,".txt",sep=''), append=T)
   list(sigma=res$sigma.ss, beta=res$beta.ss, bound=res$bound, lambda=lambda)
+  
 }
 
-estepParallelBlock <- function(doc.ids, N, K, A, V, documents, beta.index, lambda.old, mu, update.mu, beta, sigmaentropy, siginv) {
+estepParallelBlock <- function(doc.ids, N, K, A, V, documents, beta.index, lambda.old, mu, update.mu, beta, sigmaentropy, siginv, cores) {
   
   sigma.ss <- diag(0, nrow=K-1)
   beta.ss <- vector(mode='list', length=A)
@@ -110,6 +117,7 @@ estepParallelBlock <- function(doc.ids, N, K, A, V, documents, beta.index, lambd
     cnt <- cnt + 1
     
   }
+  write(pryr::mem_used(), paste("mem-",K,"-",cores,".txt",sep=''), append=T)
   list(doc.ids=doc.ids, sigma.ss=sigma.ss, beta.ss=beta.ss, bound=bound, lambda=lambda)
 }
 
