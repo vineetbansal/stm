@@ -25,7 +25,8 @@ estepSerial <- function(N, K, A, V, documents, beta.index, lambda.old, mu, updat
     beta.i <- beta[[aspect]][,words,drop=FALSE]
     
     #infer the document
-    doc.results <- logisticnormalcpp(eta=init, mu=mu.i, siginv=siginv, beta=beta.i, doc=doc, sigmaentropy=sigmaentropy)
+    # doc.results <- logisticnormalcpp(eta=init, mu=mu.i, siginv=siginv, beta=beta.i, doc=doc, sigmaentropy=sigmaentropy)
+    doc.results <- logisticnormalcpp2(eta=init, mu=mu.i, siginv=siginv, beta=beta.i, doc=doc, sigmaentropy=sigmaentropy)
     
     # update sufficient statistics
     sigma.ss <- sigma.ss + doc.results$eta$nu

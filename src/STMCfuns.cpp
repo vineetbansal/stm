@@ -1,7 +1,7 @@
 // [[Rcpp::depends(RcppArmadillo)]]
 
 #include "RcppArmadillo.h"
-
+using namespace Rcpp;
 // [[Rcpp::depends(RcppArmadillo)]]
 
 // [[Rcpp::export]]
@@ -192,4 +192,34 @@ SEXP hpbcpp(SEXP eta,
         Rcpp::Named("eta") = Rcpp::List::create(Rcpp::Named("lambda")=etas, Rcpp::Named("nu")=nu),
         Rcpp::Named("bound") = bound
         );
+}
+
+// [[Rcpp::export]]
+List logisticnormalcpp2(NumericVector eta, NumericVector mu, NumericMatrix siginv, NumericMatrix beta, NumericMatrix doc, double sigmaentropy, 
+                        std::string method="BFGS", bool bhpbcpp=true) {
+  
+  List control = List::create(Named("maxit") = 100);
+  NumericVector doc_ct = doc(1, _);
+  
+  Rcpp::Environment stats("package:stats");
+  Rcpp::Function optim = stats["optim"];
+  
+  List optim_out = optim(
+    Rcpp::_["par"] = eta,
+    Rcpp::_["fn"] = Rcpp::InternalFunction(&lhoodcpp),
+    Rcpp::_["gr"] = Rcpp::InternalFunction(&gradcpp),
+    Rcpp::_["beta"] = beta,
+    Rcpp::_["doc_ct"] = doc_ct,
+    Rcpp::_["mu"] = mu,
+    Rcpp::_["siginv"] = siginv,
+    Rcpp::_["method"] = method,
+    Rcpp::_["control"] = control
+  );
+  
+  if (bhpbcpp) {
+    return hpbcpp(optim_out["par"], beta, doc_ct, mu, siginv, wrap(sigmaentropy));
+  } else {
+    return List::create(Named("eta") = List::create(Named("lambda") = optim_out["par"]));
+  }
+  
 }
