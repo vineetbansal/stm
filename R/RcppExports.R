@@ -25,3 +25,7 @@ hpbcpp2 <- function(eta, beta, doc_ct, mu, siginv, sigmaentropy) {
     .Call(`_stm_hpbcpp2`, eta, beta, doc_ct, mu, siginv, sigmaentropy)
 }
 
+optimizeIt <- function(eta, beta, doc_ct, mu, siginv, control) {
+    .Call(`_stm_optimizeIt`, eta, beta, doc_ct, mu, siginv, control)
+}
+

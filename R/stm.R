@@ -341,6 +341,9 @@
 #' prohibitive in some settings.
 #' @param use.Eigen a boolean on whether to use RcppEigen or RcppArmadillo for
 #' performance critical matrix manipulations. Default F (RcppArmadillo used)
+#' @param use.optim If using Eigen, a boolean on whether to use the R's optim
+#' function or RcppNumerical's faster l-bfgs implementation. Default T.
+#' Only used if use.Eigen is T.
 #' @param control a list of additional advanced parameters. See details.
 #' 
 #' @return An object of class STM 
@@ -418,7 +421,7 @@ stm <- function(documents, vocab, K,
                 LDAbeta=TRUE, interactions=TRUE,
                 ngroups=1, model=NULL,
                 gamma.prior=c("Pooled", "L1"), sigma.prior=0,
-                kappa.prior=c("L1", "Jeffreys"), cores=1, use.Eigen=FALSE,
+                kappa.prior=c("L1", "Jeffreys"), cores=1, use.Eigen=FALSE, use.optim=TRUE,
                 control=list())  {
   
   #Match Arguments and save the call
@@ -581,7 +584,8 @@ stm <- function(documents, vocab, K,
                    seed=seed,
                    ngroups=ngroups,
                    cores=cores,
-                   use.Eigen=use.Eigen
+                   use.Eigen=use.Eigen,
+				   use.optim=use.optim
 				      )
   if(init.type=="Spectral" & V > 10000) {
     settings$init$maxV <- 10000

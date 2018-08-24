@@ -9,39 +9,51 @@
 #inside fitNewDocuments
 logisticnormalcpp <- function(eta, mu, siginv, beta, doc, sigmaentropy, 
                               method="BFGS", control=list(maxit=500),
-                              hpbcpp=TRUE, use.Eigen=FALSE) {
+                              hpbcpp=TRUE, use.Eigen=FALSE, use.optim=TRUE) {
   doc.ct <- doc[2,]
   Ndoc <- sum(doc.ct)
   
   if (use.Eigen) {
+
     #even at K=100, BFGS is faster than L-BFGS
-    optim.out <- optim(par=eta, fn=lhoodcpp2, gr=gradcpp2,
+    if (use.optim) {
+      optim.out <- optim(par=eta, fn=lhoodcpp2, gr=gradcpp2,
                        method=method, control=control,
                        doc_ct=doc.ct, mu=mu,
                        siginv=siginv, beta=beta)
+      
+    } else {
+
+      optim.out <- optimizeIt(eta, beta, doc.ct, mu, siginv, control)
+      
+      #if (!isTRUE(all.equal(optim.out1$par, optim.out$par))) {stop('discrepancy3')}
+    }
+    
     
     if(!hpbcpp) return(list(eta=list(lambda=optim.out$par)))
     
     #Solve for Hessian/Phi/Bound returning the result
-    return (hpbcpp2(optim.out$par, doc_ct=doc.ct, mu=mu,
-           siginv=siginv, beta=beta,
-           sigmaentropy=sigmaentropy))
-    
-    } else {
-      #even at K=100, BFGS is faster than L-BFGS
-      optim.out <- optim(par=eta, fn=lhoodcpp, gr=gradcpp,
-                         method=method, control=control,
-                         doc_ct=doc.ct, mu=mu,
-                         siginv=siginv, beta=beta)
-      
-      if(!hpbcpp) return(list(eta=list(lambda=optim.out$par)))
-      
-      #Solve for Hessian/Phi/Bound returning the result
-      return (hpbcpp(optim.out$par, doc_ct=doc.ct, mu=mu,
-                    siginv=siginv, beta=beta,
-                    sigmaentropy=sigmaentropy))
-  }
+    hpbcpp2(optim.out$par, doc_ct=doc.ct, mu=mu,
+             siginv=siginv, beta=beta,
+             sigmaentropy=sigmaentropy)
 
+    
+  } else {
+    #even at K=100, BFGS is faster than L-BFGS
+    optim.out <- optim(par=eta, fn=lhoodcpp, gr=gradcpp,
+                       method=method, control=control,
+                       doc_ct=doc.ct, mu=mu,
+                       siginv=siginv, beta=beta)
+    
+    
+    if(!hpbcpp) return(list(eta=list(lambda=optim.out$par)))
+    
+    #Solve for Hessian/Phi/Bound returning the result
+    hpbcpp(optim.out$par, doc_ct=doc.ct, mu=mu,
+           siginv=siginv, beta=beta,
+           sigmaentropy=sigmaentropy)    
+  }
+  
 }
 
 

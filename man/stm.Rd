@@ -9,7 +9,8 @@ stm(documents, vocab, K, prevalence = NULL, content = NULL, data = NULL,
   max.em.its = 500, emtol = 1e-05, verbose = TRUE, reportevery = 5,
   LDAbeta = TRUE, interactions = TRUE, ngroups = 1, model = NULL,
   gamma.prior = c("Pooled", "L1"), sigma.prior = 0, kappa.prior = c("L1",
-  "Jeffreys"), cores = 1, use.Eigen = FALSE, control = list())
+  "Jeffreys"), cores = 1, use.Eigen = FALSE, use.optim = TRUE,
+  control = list())
 }
 \arguments{
 \item{documents}{The document term matrix to be modeled. These can be supplied
@@ -127,6 +128,10 @@ prohibitive in some settings.}
 
 \item{use.Eigen}{a boolean on whether to use RcppEigen or RcppArmadillo for
 performance critical matrix manipulations. Default F (RcppArmadillo used)}
+
+\item{use.optim}{If using Eigen, a boolean on whether to use the R's optim
+function or RcppNumerical's faster l-bfgs implementation. Default T.
+Only used if use.Eigen is T.}
 
 \item{control}{a list of additional advanced parameters. See details.}
 }

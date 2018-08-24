@@ -99,6 +99,22 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// optimizeIt
+Rcpp::List optimizeIt(Eigen::ArrayXd eta, Eigen::ArrayXXd beta, Eigen::ArrayXd doc_ct, Eigen::ArrayXd mu, Eigen::ArrayXXd siginv, Rcpp::List control);
+RcppExport SEXP _stm_optimizeIt(SEXP etaSEXP, SEXP betaSEXP, SEXP doc_ctSEXP, SEXP muSEXP, SEXP siginvSEXP, SEXP controlSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Eigen::ArrayXd >::type eta(etaSEXP);
+    Rcpp::traits::input_parameter< Eigen::ArrayXXd >::type beta(betaSEXP);
+    Rcpp::traits::input_parameter< Eigen::ArrayXd >::type doc_ct(doc_ctSEXP);
+    Rcpp::traits::input_parameter< Eigen::ArrayXd >::type mu(muSEXP);
+    Rcpp::traits::input_parameter< Eigen::ArrayXXd >::type siginv(siginvSEXP);
+    Rcpp::traits::input_parameter< Rcpp::List >::type control(controlSEXP);
+    rcpp_result_gen = Rcpp::wrap(optimizeIt(eta, beta, doc_ct, mu, siginv, control));
+    return rcpp_result_gen;
+END_RCPP
+}
 
 static const R_CallMethodDef CallEntries[] = {
     {"_stm_lhoodcpp", (DL_FUNC) &_stm_lhoodcpp, 5},
@@ -107,6 +123,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_stm_lhoodcpp2", (DL_FUNC) &_stm_lhoodcpp2, 5},
     {"_stm_gradcpp2", (DL_FUNC) &_stm_gradcpp2, 5},
     {"_stm_hpbcpp2", (DL_FUNC) &_stm_hpbcpp2, 6},
+    {"_stm_optimizeIt", (DL_FUNC) &_stm_optimizeIt, 6},
     {NULL, NULL, 0}
 };
 

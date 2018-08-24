@@ -1,8 +1,11 @@
 // -*- mode: C++; c-indent-level: 4; c-basic-offset: 4; indent-tabs-mode: nil; -*-
 
 // [[Rcpp::depends(RcppEigen)]]
+// [[Rcpp::depends(RcppNumerical)]]
 
 #include <RcppEigen.h>
+#include <RcppNumerical.h>
+
 using namespace Eigen;
 
 // [[Rcpp::export]]
@@ -83,7 +86,7 @@ Rcpp::List hpbcpp2(Eigen::ArrayXd eta, Eigen::ArrayXXd beta, Eigen::ArrayXd doc_
     
     //Here we make it positive definite through diagonal dominance
     ArrayXd diag = hess.matrix().diagonal();
-    ArrayXd magnitudes = hess.array().abs().rowwise().sum() - diag;
+    ArrayXd magnitudes = hess.array().abs().rowwise().sum() - diag.abs();
     hess.matrix().diagonal() = diag.max(magnitudes);
     chol = LLT<MatrixXd, Upper>(hess);
   }
@@ -114,3 +117,47 @@ Rcpp::List hpbcpp2(Eigen::ArrayXd eta, Eigen::ArrayXXd beta, Eigen::ArrayXd doc_
     Rcpp::Named("bound")=bound
   );
 }
+
+//------------- RcppNumerical Optimization ----------------//
+
+using namespace Numer;
+
+class FG: public MFuncGrad {
+  
+private:
+  const Eigen::ArrayXXd beta;
+  const Eigen::ArrayXd doc_ct;
+  const Eigen::ArrayXd mu;
+  const Eigen::ArrayXXd siginv;
+  
+public:
+  FG(const ArrayXXd beta_, const ArrayXd doc_ct_, const ArrayXd mu_, const ArrayXXd siginv_) : beta(beta_), doc_ct(doc_ct_), mu(mu_), siginv(siginv_) {}
+  
+  // Returns the scalar value for vector 'input', and overwrites the vector 'grad' with the gradient
+  double f_grad(Constvec& input, Refvec grad) {
+    Eigen::ArrayXd g = gradcpp2(input, beta, doc_ct, mu, siginv);
+    grad = Eigen::VectorXd(g);
+    return lhoodcpp2(input, beta, doc_ct, mu, siginv);
+  }
+  
+};
+
+// [[Rcpp::export]]
+Rcpp::List optimizeIt(Eigen::ArrayXd eta, Eigen::ArrayXXd beta, Eigen::ArrayXd doc_ct, Eigen::ArrayXd mu, Eigen::ArrayXXd siginv, Rcpp::List control) {
+  FG fg(beta, doc_ct, mu, siginv);
+  
+  // TODO: A better way to initialize references?
+  double out_ = 0;
+  double& out = out_;
+  
+  // Specifying a much lower tolerance for convergence than the defaults of 1e-6 (absolute) and 1e-8 (relative)
+  // results in values that are a lot closer to what we obtain using R's 'optim' function.
+  int status = optim_lbfgs(fg, eta, out, control["maxit"]);
+
+  return Rcpp::List::create(
+    Rcpp::Named("par") = eta,
+    Rcpp::Named("value") = out,
+    Rcpp::Named("convergence") = status
+  );
+}
+//------------- RcppNumerical Optimization ----------------//
