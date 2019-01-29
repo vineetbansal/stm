@@ -80,15 +80,15 @@ stm.control <- function(documents, vocab, settings, model=NULL) {
         if(is.null(mu$gamma)) {
           gmu <- mu$mu
         } else {
-          gmu <- mu$mu[,gindex]
+          gmu <- ifelse(is.null(mu$mu), NULL, mu$mu[,gindex])
         }
         gbetaindex <- betaindex[gindex]
         glambda <- lambda[gindex,]
 
         #run the model
         suffstats[[i]] <- estep(documents=gdocs, beta.index=gbetaindex,
-                                update.mu=(!is.null(mu$gamma)),
                                 beta$beta, glambda, gmu, sigma,
+                                settings$covariates$X[gindex,], mu$gamma,
                                 verbose)
         if(verbose) {
           msg <- sprintf("Completed Group %i E-Step (%d seconds). \n", i, floor((proc.time()-t1)[3]))
@@ -118,7 +118,8 @@ stm.control <- function(documents, vocab, settings, model=NULL) {
                        covar=settings$covariates$X, enet=settings$gamma$enet, ic.k=settings$gamma$ic.k,
                        maxits=settings$gamma$maxits)
           sigma <- opt.sigma(nu=sigma.ss, lambda=lambda,
-                             mu=mu$mu, sigprior=settings$sigma$prior)
+                             mu=mu$mu, sigprior=settings$sigma$prior, gamma=mu$gamma, covar=settings$covariates$X)
+          
           beta <- opt.beta(beta.ss, beta$kappa, settings)
 
           if(verbose) {
@@ -138,8 +139,8 @@ stm.control <- function(documents, vocab, settings, model=NULL) {
       t1 <- proc.time()
       #run the model
       suffstats <- estep(documents=documents, beta.index=betaindex,
-                              update.mu=(!is.null(mu$gamma)),
                               beta$beta, lambda, mu$mu, sigma,
+                              settings$covariates$X, mu$gamma,
                               verbose)
       msg <- sprintf("Completed E-Step (%d seconds). \n", floor((proc.time()-t1)[3]))
       if(verbose) cat(msg)
@@ -153,7 +154,8 @@ stm.control <- function(documents, vocab, settings, model=NULL) {
                    covar=settings$covariates$X, enet=settings$gamma$enet, ic.k=settings$gamma$ic.k,
                    maxits=settings$gamma$maxits)
       sigma <- opt.sigma(nu=sigma.ss, lambda=lambda,
-                         mu=mu$mu, sigprior=settings$sigma$prior)
+                         mu=mu$mu, sigprior=settings$sigma$prior, gamma=mu$gamma, covar=settings$covariates$X)
+      
       beta <- opt.beta(beta.ss, beta$kappa, settings)
       if(verbose) {
         timer <- floor((proc.time()-t1)[3])

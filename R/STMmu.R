@@ -18,12 +18,12 @@ opt.mu <- function(lambda, mode=c("CTM","Pooled", "L1"), covar=NULL, enet=NULL, 
       gamma[[i]] <- vb.variational.reg(Y=lambda[,i], X=covar, Xcorr=Xcorr, maxits=maxits) 
     }
     gamma <- do.call(cbind,gamma)
-    mu<- t(covar%*%gamma)
-    #if its not a regular matrix,coerce it as it won't be sparse.
-    if(!is.matrix(mu)) {
-      mu <- as.matrix(mu)
-    }
-    return(list(mu=mu, gamma=gamma))
+    # We return NULL for the 'mu' parameter to indicate that downstream
+    # stm processes should calculate (rows of) mu on-the-fly.
+    # This avoids having a (K-1) X N mu matrix in memory, but significantly
+    # increases runtime.
+    # Some implementations of opt.mu may choose to precalculate mu instead.
+    return(list(mu=NULL, gamma=gamma))
   }
   
   #Lasso
@@ -31,11 +31,12 @@ opt.mu <- function(lambda, mode=c("CTM","Pooled", "L1"), covar=NULL, enet=NULL, 
     out <- glmnet::glmnet(x=covar[,-1], y=lambda, family="mgaussian", alpha=enet)
     unpack <- unpack.glmnet(out, ic.k=ic.k)
     gamma <- rbind(unpack$intercept, unpack$coef)
-    mu <- t(covar%*%gamma)
-    if(!is.matrix(mu)) {
-      mu <- as.matrix(mu)
-    }
-    return(list(mu=mu, gamma=gamma))
+    # We return NULL for the 'mu' parameter to indicate that downstream
+    # stm processes should calculate (rows of) mu on-the-fly.
+    # This avoids having a (K-1) X N mu matrix in memory, but significantly
+    # increases runtime.
+    # Some implementations of opt.mu may choose to precalculate mu instead.
+    return(list(mu=NULL, gamma=gamma))
   }
 }
 

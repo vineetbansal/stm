@@ -14,9 +14,13 @@
 # Then the sufficient statistics are returned.
 
 #Let's start by assuming its one beta and we may have arbitrarily subset the number of docs.
-estep <- function(documents, beta.index, update.mu, #null allows for intercept only model  
+estep <- function(documents, beta.index,               #null allows for intercept only model  
                        beta, lambda.old, mu, sigma, 
+                       covar, gamma,                    
                        verbose) {
+  
+  update.mu <- !is.null(gamma)
+  if (!update.mu & is.null(mu)) stop("mu must be supplied explicitly if not asking for an auto-update.")
   
   #quickly define useful constants
   V <- ncol(beta[[1]])
@@ -48,13 +52,18 @@ estep <- function(documents, beta.index, update.mu, #null allows for intercept o
   # For right now we are just doing everything in serial.
   # the challenge with multicore is efficient scheduling while
   # maintaining a small dimension for the sufficient statistics.
+  
+  # Define a function to retrieve mu for a document, taking advantage
+  # of mu if it's provided, otherwise calculating it explicitly
+  mu_fn <- ifelse(is.null(mu), function(i) as.vector(covar[i,] %*% gamma), function(i) mu[,i])
+
   for(i in 1:N) {
     #update components
     doc <- documents[[i]]
     words <- doc[1,]
     aspect <- beta.index[i]
     init <- lambda.old[i,]
-    if(update.mu) mu.i <- mu[,i]
+    if(update.mu) mu.i <- mu_fn(i)
     beta.i <- beta[[aspect]][,words,drop=FALSE]
     
     #infer the document

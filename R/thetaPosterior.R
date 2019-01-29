@@ -75,12 +75,28 @@ thetapost.global <- function(model, nsims) {
   ##
   #the general idea is to subtract off the component of the Sigma update arising from deviation to the
   # global mean leaving us with the component that comes from nu
-  if(ncol(mu)==1) { 
-    #if there is only one global mean vector we avoid storing them all, thus calc done with a sweep
-    covariance <- crossprod(sweep(lambda, 2, STATS=as.numeric(mu), FUN="-"))
+  if (is.null(mu)) {
+    # mu is not stored in the model - calculate on the fly
+    covar <- model$settings$covariates$X
+    gamma <- model$mu$gamma
+    for (i in 1:nrow(lambda)) {
+      for (j in 1:ncol(lambda)) {
+        lambda[i, j] <- lambda[i, j] - sum(covar[i,] * gamma[,j])
+      }
+    }
+    covariance <- crossprod(lambda)
+    # TODO: crossprod probably follows a more complicated logic for dimname transfer
+    names <- dimnames(gamma)[[2]]
+    if (!is.null(names)) dimnames(covariance) <- list(names, names)
+    
   } else {
-    #the typical calculation when there are frequency covariates
-    covariance <- crossprod(lambda-t(mu)) 
+    if(ncol(mu)==1) { 
+      #if there is only one global mean vector we avoid storing them all, thus calc done with a sweep
+      covariance <- crossprod(sweep(lambda, 2, STATS=as.numeric(mu), FUN="-"))
+    } else {
+      #the typical calculation when there are frequency covariates
+      covariance <- crossprod(lambda-t(mu)) 
+    }
   }
   #rescale by the number of documents
   covariance <- covariance/nrow(lambda)
@@ -134,7 +150,13 @@ thetapost.local <- function(model, documents, nsims) {
     if(class(nu)=="try-error") {
     
       # if it failed we try tightening by taking a BFGS step
-      if (NCOL(mu) == 1) mu.i <- mu else mu.i <- mu[,i]
+      if (is.null(mu)) {
+        mu.i <- as.vector(model$settings$covariates$X[i,] %*% model$mu$gamma)
+      } else if (ncol(mu) == 1) {
+        mu.i <- mu
+      } else {
+        mu.i <- mu[,i]
+      }
       optim.out <- optim(par = eta, fn = lhoodcpp, gr = gradcpp, 
                          method = "BFGS", control = list(maxit = 500), 
                          doc_ct = doc.ct, mu = mu.i, siginv = siginv, 

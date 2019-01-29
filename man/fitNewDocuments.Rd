@@ -112,7 +112,7 @@ updates the topic-word distributions last so they may shifted since the document
 were updated.  If the original model converged, they should be very close.
 
 By default the function returns only the MAP estimate of the normalized document-topic proportions
-theta.  By selecting \code{returnPrior=TRUE} you can get the various model parameters used to complete
+theta.  By selecting \code{returnPriors=TRUE} you can get the various model parameters used to complete
 the fit.  By selecting \code{returnPosterior=TRUE} you can get the full variational posterior.  Please
 note that the full variational posterior is very memory intensive.  For a sense of scale it requires an
 extra \eqn{K^2 + K \times (V'+1) + 1} doubles per document where V' is the number of unique tokens in the document.

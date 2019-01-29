@@ -34,7 +34,7 @@
 #' were updated.  If the original model converged, they should be very close.
 #' 
 #' By default the function returns only the MAP estimate of the normalized document-topic proportions
-#' theta.  By selecting \code{returnPrior=TRUE} you can get the various model parameters used to complete
+#' theta.  By selecting \code{returnPriors=TRUE} you can get the various model parameters used to complete
 #' the fit.  By selecting \code{returnPosterior=TRUE} you can get the full variational posterior.  Please
 #' note that the full variational posterior is very memory intensive.  For a sense of scale it requires an
 #' extra \eqn{K^2 + K \times (V'+1) + 1} doubles per document where V' is the number of unique tokens in the document. 
@@ -174,7 +174,7 @@ fitNewDocuments <- function(model=NULL, documents=NULL, newData=NULL,
   
   #if None- set to 0's with a broad prior.
   if(prevtype == "None"){
-    mu <- matrix(0, nrow=(K-1), ncol=length(documents))
+    mu <- rep(0, K-1)
     sigma <- diag(1000, nrow=(K-1))
   }
   #if Average set to the average
@@ -186,13 +186,34 @@ fitNewDocuments <- function(model=NULL, documents=NULL, newData=NULL,
     } else {
       #otherwise recalculate the covariance
       mu <- model$mu$mu
-      if(ncol(mu)==1) {
-        covariance <- crossprod(sweep(model$eta, 2, STATS=as.numeric(mu), FUN="-"))
+      if (is.null(mu)) {
+
+        gamma <- model$mu$gamma
+        covar <- model$settings$covariates$X
+        
+        eta <- model$eta
+        means <- rep(0, K-1)
+        for (i in 1:nrow(eta)) {
+          for (j in 1:K-1) {
+            mu_transpose <- sum(covar[i,] * gamma[,j])
+            eta[i, j] <- model$eta[i, j] - mu_transpose
+            means[j] <- means[j] + mu_transpose 
+          }
+        }
+        covariance <- crossprod(eta)
+        mu <- means / nrow(eta)  # replace with the new averaged mu
+        
       } else {
-        covariance <- crossprod(model$eta - t(mu)) 
+        if(ncol(mu)==1) {
+          covariance <- crossprod(sweep(model$eta, 2, STATS=as.numeric(mu), FUN="-"))
+        } else {
+          covariance <- crossprod(model$eta - t(mu)) 
+        }
+        mu <- rowMeans(mu) #replace with the new averaged mu
       }
-      mu <- rowMeans(mu) #replace with the new averaged mu
-      newcovariance <- crossprod(sweep(model$eta, 2, STATS=mu))
+
+      newcovariance <- crossprod(sweep(model$eta, 2, STATS=mu, FUN="-"))
+      
       #now to get sigma we just subtract off and replace
       sigma <- model$sigma - covariance/nrow(model$eta) + newcovariance/nrow(model$eta)
     }
@@ -227,7 +248,10 @@ fitNewDocuments <- function(model=NULL, documents=NULL, newData=NULL,
      X <- makeDesignMatrix(formula, origData, newData, test=test)
     }
     sigma <- model$sigma
-    mu <- t(X%*%model$mu$gamma)
+    # If the original model was a "low-memory" model (i.e. with the mu$mu component as NULL),
+    # then we'll choose to do the (row-wise) mu calculations sequentially as well by setting mu to NULL.
+    # Otherwise, we'll precalculate the mu matrix
+    mu <- ifelse(is.null(model$mu$mu), NULL, t(X%*%model$mu$gamma))
   }
   
   #Generate the Content Prior beta and betaindex
@@ -277,15 +301,21 @@ fitNewDocuments <- function(model=NULL, documents=NULL, newData=NULL,
     phi <- vector(mode="list", length=length(documents))
     bound <- vector(length=length(documents))
   }
+
   for(i in 1:length(documents)) {
     #update components
     doc <- documents[[i]]
     aspect <- betaindex[i]
     init <- rep(0, K-1)
-    #deal with the special case of mu as a vector.
-    if(class(mu)!="numeric") {
+    
+    if (is.null(mu)) {
+      # mu is NULL, implying we need to calculate it on-the-fly
+      mu.i <- as.vector(X[i,] %*% model$mu$gamma)
+    } else if (class(mu)!="numeric") {
+      # mu is a (K-1) x N matrix
       mu.i <- mu[,i]
     } else {
+      # deal with the special case of mu as a vector
       mu.i <- mu 
     }
     #infer the document
