@@ -251,7 +251,11 @@ fitNewDocuments <- function(model=NULL, documents=NULL, newData=NULL,
     # If the original model was a "low-memory" model (i.e. with the mu$mu component as NULL),
     # then we'll choose to do the (row-wise) mu calculations sequentially as well by setting mu to NULL.
     # Otherwise, we'll precalculate the mu matrix
-    mu <- ifelse(is.null(model$mu$mu), NULL, t(X%*%model$mu$gamma))
+    if (is.null(model$mu$mu)) {
+      mu <- NULL
+    } else {
+      mu <- t(X%*%model$mu$gamma)
+    }
   }
   
   #Generate the Content Prior beta and betaindex

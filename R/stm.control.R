@@ -80,7 +80,11 @@ stm.control <- function(documents, vocab, settings, model=NULL) {
         if(is.null(mu$gamma)) {
           gmu <- mu$mu
         } else {
-          gmu <- ifelse(is.null(mu$mu), NULL, mu$mu[,gindex])
+          if (is.null(mu$mu)) {
+            gmu <- NULL
+          } else {
+            gmu <- mu$mu[,gindex]
+          }
         }
         gbetaindex <- betaindex[gindex]
         glambda <- lambda[gindex,]
