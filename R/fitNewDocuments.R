@@ -195,7 +195,7 @@ fitNewDocuments <- function(model=NULL, documents=NULL, newData=NULL,
         means <- rep(0, K-1)
         for (i in 1:nrow(eta)) {
           for (j in 1:K-1) {
-            mu_transpose <- sum(covar[i,] * gamma[,j])
+            mu_transpose <- as.numeric(covar[i,] %*% gamma[,j])
             eta[i, j] <- model$eta[i, j] - mu_transpose
             means[j] <- means[j] + mu_transpose 
           }

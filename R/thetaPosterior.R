@@ -81,7 +81,7 @@ thetapost.global <- function(model, nsims) {
     gamma <- model$mu$gamma
     for (i in 1:nrow(lambda)) {
       for (j in 1:ncol(lambda)) {
-        lambda[i, j] <- lambda[i, j] - sum(covar[i,] * gamma[,j])
+        lambda[i, j] <- lambda[i, j] - as.numeric(covar[i,] %*% gamma[,j])
       }
     }
     covariance <- crossprod(lambda)

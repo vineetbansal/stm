@@ -5,7 +5,7 @@ opt.sigma <- function(nu, lambda, mu, sigprior, gamma=NULL, covar=NULL) {
   if (is.null(mu)) {  # not provided - calculate on the fly
     for (i in 1:nrow(lambda)) {
       for (j in 1:ncol(lambda)) {
-        lambda[i, j] <- lambda[i, j] - sum(covar[i,] * gamma[,j])
+        lambda[i, j] <- lambda[i, j] - as.numeric(covar[i,] %*% gamma[,j])
       }
     }
     covariance <- crossprod(lambda)
