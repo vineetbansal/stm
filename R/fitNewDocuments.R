@@ -227,7 +227,11 @@ fitNewDocuments <- function(model=NULL, documents=NULL, newData=NULL,
      X <- makeDesignMatrix(formula, origData, newData, test=test)
     }
     sigma <- model$sigma
-    mu <- t(X%*%model$mu$gamma)
+    if (Sys.getenv("FMAT")=="1") {
+      mu <- t(FactorizedMatrix(X, model$mu$gamma))
+    } else {
+      mu <- t(X%*%model$mu$gamma)
+    }
   }
   
   #Generate the Content Prior beta and betaindex

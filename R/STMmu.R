@@ -18,11 +18,16 @@ opt.mu <- function(lambda, mode=c("CTM","Pooled", "L1"), covar=NULL, enet=NULL, 
       gamma[[i]] <- vb.variational.reg(Y=lambda[,i], X=covar, Xcorr=Xcorr, maxits=maxits) 
     }
     gamma <- do.call(cbind,gamma)
-    mu<- t(covar%*%gamma)
-    #if its not a regular matrix,coerce it as it won't be sparse.
-    if(!is.matrix(mu)) {
-      mu <- as.matrix(mu)
+    if (Sys.getenv("FMAT")=="1") {
+      mu <- t(FactorizedMatrix(covar, gamma))
+    } else {
+      mu<- t(covar%*%gamma)
+      #if its not a regular matrix,coerce it as it won't be sparse.
+      if(!is.matrix(mu)) {
+        mu <- as.matrix(mu)
+      }      
     }
+    
     return(list(mu=mu, gamma=gamma))
   }
   
@@ -31,9 +36,13 @@ opt.mu <- function(lambda, mode=c("CTM","Pooled", "L1"), covar=NULL, enet=NULL, 
     out <- glmnet::glmnet(x=covar[,-1], y=lambda, family="mgaussian", alpha=enet)
     unpack <- unpack.glmnet(out, ic.k=ic.k)
     gamma <- rbind(unpack$intercept, unpack$coef)
-    mu <- t(covar%*%gamma)
-    if(!is.matrix(mu)) {
-      mu <- as.matrix(mu)
+    if (Sys.getenv("FMAT")=="1") {
+      mu <- t(FactorizedMatrix(covar, gamma))
+    } else {
+      mu <- t(covar%*%gamma)
+      if(!is.matrix(mu)) {
+        mu <- as.matrix(mu)
+      }
     }
     return(list(mu=mu, gamma=gamma))
   }
