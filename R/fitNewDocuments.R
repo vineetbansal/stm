@@ -324,7 +324,7 @@ fitNewDocuments <- function(model=NULL, documents=NULL, newData=NULL,
     
   if(returnPriors) {
     toReturn$beta <- beta
-    toReturn$mu <- mu
+    toReturn$mu <- as.matrix(mu)
     toReturn$sigma <- sigma
     toReturn$betaindex <- betaindex
   }

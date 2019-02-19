@@ -92,6 +92,7 @@ methods::setMethod(
   }
 )
 
+#' @exportMethod as.matrix
 methods::setMethod(
   'as.matrix',
   c('FactorizedMatrix'),
