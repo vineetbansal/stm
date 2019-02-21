@@ -32,7 +32,7 @@ estep <- function(documents, beta.index, update.mu, #null allows for intercept o
   for(i in 1:A) {
     beta.ss[[i]] <- matrix(0, nrow=K,ncol=V)
   }
-  bound <- vector(length=N)
+  bound.sum <- 0
   lambda <- vector("list", length=N)
   
   # 2) Precalculate common components
@@ -64,7 +64,7 @@ estep <- function(documents, beta.index, update.mu, #null allows for intercept o
     # update sufficient statistics 
     sigma.ss <- sigma.ss + doc.results$eta$nu
     beta.ss[[aspect]][,words] <- doc.results$phis + beta.ss[[aspect]][,words]
-    bound[i] <- doc.results$bound
+    bound.sum <- bound.sum + doc.results$bound
     lambda[[i]] <- c(doc.results$eta$lambda)
     if(verbose && i%%ctevery==0) cat(".")
   }
@@ -72,5 +72,5 @@ estep <- function(documents, beta.index, update.mu, #null allows for intercept o
   
   #4) Combine and Return Sufficient Statistics
   lambda <- do.call(rbind, lambda)
-  return(list(sigma=sigma.ss, beta=beta.ss, bound=bound, lambda=lambda))
+  return(list(sigma=sigma.ss, beta=beta.ss, bound.sum=bound.sum, lambda=lambda))
 }

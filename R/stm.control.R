@@ -104,14 +104,14 @@ stm.control <- function(documents, vocab, settings, model=NULL) {
           sigma.ss <- suffstats[[1]]$sigma
           lambda <- suffstats[[1]]$lambda
           beta.ss <- suffstats[[1]]$beta
-          bound.ss <- suffstats[[1]]$bound
+          bound.sum.ss <- suffstats[[1]]$bound.sum
           for(j in 2:ngroups) {
             sigma.ss <- sigma.ss + suffstats[[j]]$sigma
             lambda <- rbind(lambda, suffstats[[j]]$lambda)
             for(a in 1:length(beta.ss)) {
               beta.ss[[a]] <- beta.ss[[a]] + suffstats[[j]]$beta[[a]]
             }
-            bound.ss <- c(bound.ss, suffstats[[j]]$bound)
+            bound.sum.ss <- bound.sum.ss + suffstats[[j]]$bound.sum
           }
           # Now do the updates themselves
           mu <- opt.mu(lambda=lambda, mode=settings$gamma$mode,
@@ -147,7 +147,7 @@ stm.control <- function(documents, vocab, settings, model=NULL) {
       sigma.ss <- suffstats$sigma
       lambda <- suffstats$lambda
       beta.ss <- suffstats$beta
-      bound.ss <- suffstats$bound
+      bound.sum.ss <- suffstats$bound.sum
       #do the m-step
       mu <- opt.mu(lambda=lambda, mode=settings$gamma$mode,
                    covar=settings$covariates$X, enet=settings$gamma$enet, ic.k=settings$gamma$ic.k,
@@ -164,7 +164,7 @@ stm.control <- function(documents, vocab, settings, model=NULL) {
       }
     }
     #Convergence
-    convergence <- convergence.check(bound.ss, convergence, settings)
+    convergence <- convergence.check(bound.sum.ss, convergence, settings)
     stopits <- convergence$stopits
 
     #Print Updates if we haven't yet converged

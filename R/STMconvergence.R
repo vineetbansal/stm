@@ -3,7 +3,7 @@
 # Changes:
 # 1) removed word checks
 # 2) distinguish between converged and stopping the em algorithm
-convergence.check <- function(bound.ss, convergence, settings) {
+convergence.check <- function(bound.sum.ss, convergence, settings) {
   
   #unpack the relevant pieces from the settings
   verbose <- settings$verbose
@@ -14,7 +14,7 @@ convergence.check <- function(bound.ss, convergence, settings) {
   if(is.null(convergence)) convergence <- list(bound=c(), its=1, converged=FALSE, stopits=FALSE)
 
   #fill in the current bound
-  convergence$bound[convergence$its] <- sum(bound.ss)
+  convergence$bound[convergence$its] <- bound.sum.ss
 
   #if not the first iteration
   if(convergence$its > 1) {
